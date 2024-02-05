@@ -1,8 +1,8 @@
 {
     "services": [
         {
-            "org": "anylog",
-            "url": "anylog-node",
+            "org": "$HZN_ORG_ID",
+            "url": "$SERVICE_NAME",
             "variables": {}
         }
     ]

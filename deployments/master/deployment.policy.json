@@ -1,13 +1,13 @@
 {
-  "label": "anylog-node_1.3_amd64 Deployment Policy",
+  "label": "$SERVICE_NAME master node for $ARCH Deployment Policy",
   "description": "A super-simple sample Horizon Deployment Policy",
   "service": {
-    "name": "anylog-node",
-    "org": "anylog",
+    "name": "$SERVICE_NAME",
+    "org": "$HZN_ORG_ID",
     "arch": "*",
     "serviceVersions": [
       {
-        "version": "1.3",
+        "version": "$SERVICE_VERSION",
         "priority":{}
       }
     ]
@@ -15,13 +15,13 @@
   "properties": [
   ],
   "constraints": [
-    "anylog.node == master"
+    "anylog.node == $NODE_TYPE"
   ],
   "userInput": [
     {
-      "serviceOrgid": "anylog",
-      "serviceUrl": "anylog-node",
-      "serviceVersionRange": "[0.0.0,INFINITY)",
+      "serviceOrgid": "$HZN_ORG_ID",
+      "serviceUrl": "$SERVICE_NAME",
+      "serviceVersionRange": "[$SERVICE_VERSION,INFINITY)",
       "inputs": [
         {
           "name": "HW_WHO",

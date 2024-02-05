@@ -15,7 +15,7 @@
   "properties": [
   ],
   "constraints": [
-    "anylog.node == master"
+    "anylog.node == operator"
   ],
   "userInput": [
     {
