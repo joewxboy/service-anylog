@@ -1,6 +1,9 @@
 # Install Open Horizon
 
-The following installs Open Horizon locally and is based on [Installing Open Horizon Overview](https://open-horizon.github.io/docs/hub/online_installation/) 
+The following installs Open Horizon locally and is based on [Installing Open Horizon Overview](https://open-horizon.github.io/docs/hub/online_installation/)
+
+Steps provided, install a local deployment of Open Horizon with a [Hello World](https://github.com/open-horizon/examples/blob/master/edge/services/helloworld/README.md) 
+service to validate everything was installed correctly.   
 
 ### Requirements
 * **Operating System**: Ubuntu 18.04 LTS (or higher) 
