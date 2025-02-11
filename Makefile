@@ -21,10 +21,10 @@ export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
 export ARCH := $(shell uname -m)
 export SERVICE_VERSION ?= latest
 ifeq ($(ARCH),aarch64)
-    export TAG ?= latest-arm64
+    export SERVICE_VERSION ?= latest-arm64
     export ARCH=arm64
 else ifeq ($(ARCH),arm64)
-    export TAG ?= latest-arm64
+    export SERVICE_VERSION ?= latest-arm64
     export ARCH=arm64
 endif
 
