@@ -17,12 +17,17 @@ export DOCKER_IMAGE_VERSION ?= latest
 export HZN_ORG_ID ?= myorg
 export HZN_LISTEN_IP ?= 127.0.0.1
 export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
-export SERVICE_VERSION ?= 1.3.2409
-export ARCH ?= $(shell hzn architecture)
-ifeq ($(ARCH), aarch64)
-	export DOCKER_IMAGE_VERSION := latest-arm64
-	export ARCH=arm64
+
+export ARCH := $(shell uname -m)
+export SERVICE_VERSION ?= latest
+ifeq ($(ARCH),aarch64)
+    export SERVICE_VERSION ?= latest-arm64
+    export ARCH=arm64
+else ifeq ($(ARCH),arm64)
+    export SERVICE_VERSION ?= latest-arm64
+    export ARCH=arm64
 endif
+
 
 # Node Deployment configs
 export EDGELAKE_NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}')
