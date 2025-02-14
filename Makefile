@@ -77,6 +77,8 @@ check:
 	@echo "ANYLOG_REST_PORT       default: 32549                                 actual: ${ANYLOG_REST_PORT}"
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
+deploy-check:
+        @hzn deploycheck all -t device -B deployment-policies/operator.json --service=service.definition.json --service-pol=service.policy.json --node-pol=node.policy.json
 test-conn:
 	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
 	@read CONN; \
