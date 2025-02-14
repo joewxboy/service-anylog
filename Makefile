@@ -12,14 +12,19 @@ export ARCH := $(shell uname -m)
 export DOCKER_IMAGE_BASE ?= anylogco/edgelake
 export DOCKER_IMAGE_NAME ?= edgelake
 export DOCKER_HUB_ID ?= anylogco
-export DOCKER_IMAGE_VERSION ?= latest
-ifeq ($(ARCH),aarch64)
-    export DOCKER_IMAGE_VERSION ?= latest-arm64
-    export ARCH=arm64
-else ifeq ($(ARCH),arm64)
-    export DOCKER_IMAGE_VERSION ?= latest-arm64
-    export ARCH=arm64
+
+# set Docker image if does not already exist
+ifndef DOCKER_IMAGE_VERSION
+    DOCKER_IMAGE_VERSION := latest
+    ifeq ($(ARCH),aarch64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    else ifeq ($(ARCH),arm64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    endif
 endif
+
 
 # Open Horizon Configs
 export HZN_ORG_ID ?= myorg
