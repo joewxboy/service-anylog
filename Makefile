@@ -4,11 +4,11 @@ SHELL := /bin/bash
 ifneq ($(filter check,$(MAKECMDGOALS)), )
         EDGELAKE_TYPE = $(EDGLAKE_TYPE)
 else
-        EDGELAKE_TYPE := generic
+        EDGELAKE_TYPE := operator
 endif
 
 # Docker configurations
-export ARCH := $(shell uname -m)
+export ARCH ?= $(shell hzn architecture)
 export DOCKER_IMAGE_BASE ?= anylogco/edgelake
 export DOCKER_IMAGE_NAME ?= edgelake
 export DOCKER_HUB_ID ?= anylogco
@@ -30,7 +30,7 @@ endif
 export HZN_ORG_ID ?= myorg
 export HZN_LISTEN_IP ?= 127.0.0.1
 export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
-export SERVICE_VERSION ?= latest
+export SERVICE_VERSION ?= 1.3.0
 
 # Node Deployment configs
 export EDGELAKE_NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}')
@@ -67,6 +67,7 @@ check:
 	@echo "HZN_LISTEN_IP          default: 127.0.0.1                             actual: ${HZN_LISTEN_IP}"
 	@echo "SERVICE_NAME                                                          actual: ${SERVICE_NAME}"
 	@echo "SERVICE_VERSION                                                       actual: ${SERVICE_VERSION}"
+	@echo "ARCH                   default: amd64                                 actual: ${ARCH}"
 	@echo "==================="
 	@echo "EDGELAKE DEFINITION"
 	@echo "==================="
@@ -78,7 +79,7 @@ check:
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
 deploy-check:
-        @hzn deploycheck all -t device -B deployment-policies/operator.json --service=service.definition.json --service-pol=service.policy.json --node-pol=node.policy.json
+	@hzn deploycheck all -t device -B deployment-policies/operator.json --service=service.definition.json --service-pol=service.policy.json --node-pol=node.policy.json
 test-conn:
 	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
 	@read CONN; \
