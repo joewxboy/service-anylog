@@ -8,26 +8,29 @@ else
 endif
 
 # Docker configurations
+export ARCH := $(shell uname -m)
 export DOCKER_IMAGE_BASE ?= anylogco/edgelake
 export DOCKER_IMAGE_NAME ?= edgelake
 export DOCKER_HUB_ID ?= anylogco
-export DOCKER_IMAGE_VERSION ?= latest
+
+# set Docker image if does not already exist
+ifndef DOCKER_IMAGE_VERSION
+    DOCKER_IMAGE_VERSION := latest
+    ifeq ($(ARCH),aarch64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    else ifeq ($(ARCH),arm64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    endif
+endif
+
 
 # Open Horizon Configs
 export HZN_ORG_ID ?= myorg
 export HZN_LISTEN_IP ?= 127.0.0.1
 export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
-
-export ARCH := $(shell uname -m)
 export SERVICE_VERSION ?= latest
-ifeq ($(ARCH),aarch64)
-    export SERVICE_VERSION ?= latest-arm64
-    export ARCH=arm64
-else ifeq ($(ARCH),arm64)
-    export SERVICE_VERSION ?= latest-arm64
-    export ARCH=arm64
-endif
-
 
 # Node Deployment configs
 export EDGELAKE_NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}')
@@ -74,6 +77,8 @@ check:
 	@echo "ANYLOG_REST_PORT       default: 32549                                 actual: ${ANYLOG_REST_PORT}"
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
+deploy-check:
+        @hzn deploycheck all -t device -B deployment-policies/operator.json --service=service.definition.json --service-pol=service.policy.json --node-pol=node.policy.json
 test-conn:
 	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
 	@read CONN; \
