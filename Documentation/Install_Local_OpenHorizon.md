@@ -36,7 +36,7 @@ for cmd in update upgrade ; do
   sudo apt-get -y ${cmd}
 done 
  
-curl -sSL https://raw.githubusercontent.com/open-horizon/devops/master/mgmt-hub/deploy-mgmt-hub.sh -A -R | bash
+curl -sSL https://raw.githubusercontent.com/open-horizon/devops/master/mgmt-hub/deploy-mgmt-hub.sh | bash
 ```
 
 3. Based on output generated in step 2, [part 9](Install_Local_OpenHorizon_index.md), update ~/.bashrc with ID and credentials. 
