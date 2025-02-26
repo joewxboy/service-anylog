@@ -24,17 +24,31 @@ export CONTAINER_CMD := $(shell if command -v podman >/dev/null 2>&1; then echo 
 export DOCKER_COMPOSE_CMD := $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; \
 	elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
 
+-include docker-makefiles/edgelake_${EDGELAKE_TYPE}.env
+export
+# Open Horizon Configs
+export HZN_ORG_ID ?= myorg
+export HZN_LISTEN_IP ?= 127.0.0.1
+export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
+export SERVICE_VERSION ?= 1.3.1
+#export SERVICE_VERSION ?= 1.3.0
+
+export NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}'| sed 's/ /-/g' | tr '[:upper:]' '[:lower:]')
+export IMAGE := $(shell cat docker-makefiles/.env | grep IMAGE | awk -F "=" '{print $$2}')
+export IMAGE_NAME := $(shell echo $(IMAGE) | awk -F "/" '{print $$2}')
+export IMAGE_ORG := $(shell echo $(IMAGE) | awk -F "/" '{print $$1}')
 
 # Only execute shell commands if NOT called with test-node or test-network
-ifneq ($(filter test-node test-network,$(MAKECMDGOALS)),test-node test-network)
-	export NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}'| sed 's/ /-/g' | tr '[:upper:]' '[:lower:]')
-	export ANYLOG_SERVER_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_SERVER_PORT | awk -F "=" '{print $$2}')
-    export ANYLOG_REST_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_REST_PORT | awk -F "=" '{print $$2}')
-	export ANYLOG_BROKER_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_BROKER_PORT | awk -F "=" '{print $$2}' | grep -v '^$$')
-    export REMOTE_CLI := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep REMOTE_CLI | awk -F "=" '{print $$2}')
-    export ENABLE_NEBULA := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ENABLE_NEBULA | awk -F "=" '{print $$2}')
-    export IMAGE := $(shell cat docker-makefiles/.env | grep IMAGE | awk -F "=" '{print $$2}')
-endif
+export ANYLOG_SERVER_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_SERVER_PORT | awk -F "=" '{print $$2}')
+export ANYLOG_REST_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_REST_PORT | awk -F "=" '{print $$2}')
+export ANYLOG_BROKER_PORT := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ANYLOG_BROKER_PORT | awk -F "=" '{print $$2}' | grep -v '^$$')
+export REMOTE_CLI := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep REMOTE_CLI | awk -F "=" '{print $$2}')
+export ENABLE_NEBULA := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep ENABLE_NEBULA | awk -F "=" '{print $$2}')
+
+export ANYLOG_VOLUME := $(NODE_NAME)-anylog
+export BLOCKCHAIN_VOLUME := $(NODE_NAME)-blockchain
+export DATA_VOLUME := $(NODE_NAME)-data
+export LOCAL_SCRIPTS_VOLUME := $(NODE_NAME)-local-scripts
 
 # Detect OS type
 export OS := $(shell uname -s)
@@ -71,10 +85,12 @@ test-conn:
 	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
 	@read CONN; \
 	echo $$CONN > conn.tmp
+
 build:
 	$(CONTAINER_CMD) pull docker.io/anylogco/$(IMAGE):$(TAG)
 dry-run: generate-docker-compose
 	@echo "Dry Run $(EDGELAKE_TYPE)"
+
 up: generate-docker-compose
 	@echo "Deploy EdgeLake $(EDGELAKE_TYPE)"
 	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml up -d
@@ -92,6 +108,32 @@ clean: generate-docker-compose
 	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml 
 attach:
 	@$(CONTAINER_CMD) attach --detach-keys=ctrl-d anylog-$(EDGELAKE_TYPE)
+
+check:
+	@echo "====================="
+	@echo "ENVIRONMENT VARIABLES"
+	@echo "====================="
+	@echo "EDGELAKE_TYPE          default: generic                               actual: $(EDGELAKE_TYPE)"
+	@echo "DOCKER_IMAGE_BASE      default: anylogco/edgelake                     actual: $(IMAGE)"
+	@echo "DOCKER_IMAGE_NAME      default: edgelake                              actual: $(IMAGE_NAME)"
+	@echo "DOCKER_IMAGE_VERSION   default: latest                                actual: $(TAG)"
+	@echo "DOCKER_HUB_ID          default: anylogco                              actual: $(IMAGE_ORG)"
+	@echo "HZN_ORG_ID             default: myorg                                 actual: ${HZN_ORG_ID}"
+	@echo "HZN_LISTEN_IP          default: 127.0.0.1                             actual: ${HZN_LISTEN_IP}"
+	@echo "SERVICE_NAME                                                          actual: ${SERVICE_NAME}"
+	@echo "SERVICE_VERSION                                                       actual: ${SERVICE_VERSION}"
+	@echo "ARCH                   default: amd64                                 actual: ${ARCH}"
+	@echo "==================="
+	@echo "EDGELAKE DEFINITION"
+	@echo "==================="
+	@echo "NODE_TYPE              default: generic                               actual: ${NODE_TYPE}"
+	@echo "NODE_NAME              default: edgelake-node                         actual: $(NODE_NAME)"
+	@echo "COMPANY_NAME           default: New Company                           actual: $(COMPANY_NAME)"
+	@echo "ANYLOG_SERVER_PORT     default: 32548                                 actual: $(ANYLOG_SERVER_PORT)"
+	@echo "ANYLOG_REST_PORT       default: 32549                                 actual: $(ANYLOG_REST_PORT)"
+	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
+	@echo ""
+
 test-node: test-conn
 	@CONN=$$(cat conn.tmp); \
 	echo "Node State against $$CONN"; \
@@ -99,14 +141,13 @@ test-node: test-conn
 	curl -X GET http://$$CONN -H "command: test node"     -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	curl -X GET http://$$CONN -H "command: get processes" -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	rm -rf conn.tmp
-
 test-network: test-conn
 	@CONN=$$(cat conn.tmp); \
 	echo "Test Network Against: $$CONN"; \
 	curl -X GET http://$$CONN -H "command: test network" -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	rm -rf conn.tmp
 exec:
-	@$(CONTAINER_CMD) exec -it edgelake-$(EDGELAKE_TYPE) bash
+	@$(CONTAINER_CMD) exec -it edgelake-$(Node_NAME) bash
 logs:
 	@$(CONTAINER_CMD) logs edgelake-$(EDGELAKE_TYPE)
 help:
