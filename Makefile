@@ -4,25 +4,33 @@ SHELL := /bin/bash
 ifneq ($(filter check,$(MAKECMDGOALS)), )
         EDGELAKE_TYPE = $(EDGLAKE_TYPE)
 else
-        EDGELAKE_TYPE := generic
+        EDGELAKE_TYPE := operator
 endif
 
 # Docker configurations
+export ARCH ?= $(shell hzn architecture)
 export DOCKER_IMAGE_BASE ?= anylogco/edgelake
 export DOCKER_IMAGE_NAME ?= edgelake
 export DOCKER_HUB_ID ?= anylogco
-export DOCKER_IMAGE_VERSION := latest
+
+# set Docker image if does not already exist
+ifndef DOCKER_IMAGE_VERSION
+    DOCKER_IMAGE_VERSION := latest
+    ifeq ($(ARCH),aarch64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    else ifeq ($(ARCH),arm64)
+        DOCKER_IMAGE_VERSION := latest-arm64
+        ARCH := arm64
+    endif
+endif
+
 
 # Open Horizon Configs
 export HZN_ORG_ID ?= myorg
 export HZN_LISTEN_IP ?= 127.0.0.1
 export SERVICE_NAME ?= service-edgelake-$(EDGELAKE_TYPE)
-export SERVICE_VERSION ?= 1.3.2409
-export ARCH ?= $(shell hzn architecture)
-ifeq ($(ARCH), aarch64)
-	export DOCKER_IMAGE_VERSION := latest-arm64
-	export ARCH=arm64
-endif
+export SERVICE_VERSION ?= 1.3.0
 
 # Node Deployment configs
 export EDGELAKE_NODE_NAME := $(shell cat docker-makefiles/edgelake_${EDGELAKE_TYPE}.env | grep NODE_NAME | awk -F "=" '{print $$2}')
@@ -59,6 +67,7 @@ check:
 	@echo "HZN_LISTEN_IP          default: 127.0.0.1                             actual: ${HZN_LISTEN_IP}"
 	@echo "SERVICE_NAME                                                          actual: ${SERVICE_NAME}"
 	@echo "SERVICE_VERSION                                                       actual: ${SERVICE_VERSION}"
+	@echo "ARCH                   default: amd64                                 actual: ${ARCH}"
 	@echo "==================="
 	@echo "EDGELAKE DEFINITION"
 	@echo "==================="
@@ -69,6 +78,8 @@ check:
 	@echo "ANYLOG_REST_PORT       default: 32549                                 actual: ${ANYLOG_REST_PORT}"
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
+deploy-check:
+	@hzn deploycheck all -t device -B deployment-policies/operator.json --service=service.definition.json --service-pol=service.policy.json --node-pol=node.policy.json
 test-conn:
 	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
 	@read CONN; \
@@ -111,7 +122,7 @@ attach:
 logs:
 	@docker logs $(EDGELAKE_NODE_NAME)
 
-publish: publish-service publish-service-policy publish-deployment-policy agent-run
+publish: publish-service publish-service-policy publish-deployment-policy
 hzn-clean: hzn-clean remove-deployment-policy remove-service-policy remove-service
 
 # Pull, not push, Docker image since provided by third party
@@ -120,7 +131,7 @@ publish-service:
 	@echo "PUBLISHING SERVICE"
 	@echo "=================="
 	@echo ${HZN_EXCHANGE_USER_AUTH}
-	@echo hzn exchange service publish --org=${HZN_ORG_ID} --user-pw=${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
+	@echo hzn exchange service publish --org=${HZN_ORG_ID} -u ${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
 	@hzn exchange service publish --org=${HZN_ORG_ID} --user-pw=${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
 	@echo ""
 remove-service:
@@ -168,7 +179,7 @@ agent-run:
 	@echo "================"
 	@echo "REGISTERING NODE"
 	@echo "================"
-	@hzn register --policy=node.policy.json
+	@hzn register --name=hzn-client --policy=node.policy.json
 	@watch hzn agreement list
 hzn-clean:
 	@echo "==================="
