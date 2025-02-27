@@ -4,7 +4,7 @@
     "service": {       
       "name": "$SERVICE_NAME",
       "org": "$HZN_ORG_ID",    
-      "arch": "*",
+      "arch": "$ARCH",
       "serviceVersions": [ 
         {
           "version": "$SERVICE_VERSION",

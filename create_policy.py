@@ -3,6 +3,9 @@ import ast
 import json
 import os
 
+ROOT_DIR = os.path.expanduser(os.path.expandvars(__file__)).split("create_policy.py")[0]
+FILE_PATH = os.path.join(ROOT_DIR, 'service.deployment.json')
+
 BASE_POLICY = {
     "label": "${SERVICE_NAME} Deployment Policy",
     "description": "Policy to auto deploy ${SERVICE_NAME}",
@@ -85,7 +88,9 @@ def main():
     if not os.path.isfile(full_path):
         raise FileNotFoundError(full_path)
     BASE_POLICY['userInput'][0]['inputs'] = read_file(file_path=full_path)
-    print(json.dumps(BASE_POLICY, indent=4))
+
+    with open(FILE_PATH, 'w') as f:
+        json.dump(BASE_POLICY, f, indent=2)
 
 if __name__ == '__main__':
     main()
