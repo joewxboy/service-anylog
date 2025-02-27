@@ -200,7 +200,7 @@ test-network: test-conn
 	curl -X GET http://$$CONN -H "command: test network" -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	rm -rf conn.tmp
 exec:
-	@$(CONTAINER_CMD) exec -it $(NODE_NAME)
+	@$(CONTAINER_CMD) exec -it $(NODE_NAME) /bin/bash
 logs:
 	@$(CONTAINER_CMD) logs $(NODE_NAME)
 help:
