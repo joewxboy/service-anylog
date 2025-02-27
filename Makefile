@@ -50,6 +50,7 @@ export BLOCKCHAIN_VOLUME := $(NODE_NAME)-blockchain
 export DATA_VOLUME := $(NODE_NAME)-data
 export LOCAL_SCRIPTS_VOLUME := $(NODE_NAME)-local-scripts
 
+$(shell python3 create_policy.py ${TAG} docker-makefiles/edgelake_${EDGELAKE_TYPE}.env)
 # Detect OS type
 export OS := $(shell uname -s)
 # Choose Docker Compose template based on OS
@@ -133,6 +134,9 @@ check:
 	@echo "ANYLOG_REST_PORT       default: 32549                                 actual: $(ANYLOG_REST_PORT)"
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
+
+publish: publish-service publish-service-policy publish-deployment-policy
+hzn-clean: hzn-clean remove-deployment-policy remove-service-policy remove-service
 publish-service:
 	@echo "=================="
 	@echo "PUBLISHING SERVICE"
@@ -165,15 +169,16 @@ publish-deployment-policy:
 	@echo "============================"
 	@echo "PUBLISHING DEPLOYMENT POLICY"
 	@echo "============================"
-	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
-            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
-            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-        elif [ -n "$(BROKER_PORT)" ]; then \
-            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-        else \
-            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-        fi
+	@hzn  exchange deployment addpolicy --org=$(HZN_ORI_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f service.deployment.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
+#	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
+#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+#        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
+#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+#        elif [ -n "$(BROKER_PORT)" ]; then \
+#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+#        else \
+#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+#        fi
 	@echo ""
 remove-deployment-policy:
 	@echo "=========================="
