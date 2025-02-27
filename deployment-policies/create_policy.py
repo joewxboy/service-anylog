@@ -1,7 +1,5 @@
 import argparse
 import ast
-
-import dotenv
 import json
 import os
 
