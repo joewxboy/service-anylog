@@ -136,8 +136,12 @@ logs:
 	@$(CONTAINER_CMD) logs $(NODE_NAME)
 
 # Open Horizon
-hzn-start: publish-service publish-service-policy publish-deployment-policy
+publish: publish-service publish-service-policy publish-deployment-policy
+publish-version: publish-service publish-service-policy
+deploy: publish-deployment-policy
+run: agent-run
 hzn-clean: hzn-clean remove-deployment-policy remove-service-policy remove-service
+
 publish-service:
 	@echo "=================="
 	@echo "PUBLISHING SERVICE"

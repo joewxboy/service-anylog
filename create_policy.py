@@ -5,7 +5,7 @@ import os
 
 ROOT_DIR = os.path.expanduser(os.path.expandvars(__file__)).split("create_policy.py")[0]
 FILE_PATH = os.path.join(ROOT_DIR, 'service.deployment.json')
-BASE_POLICY = BASE_POLICY = {
+BASE_POLICY = {
     "label": "${SERVICE_NAME} Deployment Policy",
     "description": "Policy to auto deploy ${SERVICE_NAME}",
     "service": {
