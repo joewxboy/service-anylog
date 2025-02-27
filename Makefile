@@ -60,56 +60,14 @@ else
 	export DOCKER_COMPOSE_TEMPLATE := docker-makefiles/docker-compose-template-ports-base.yaml
 endif
 
+# prepare
 all: help
 login:
 	$(CONTAINER_CMD) login docker.io -u anyloguser --password $(EDGELAKE_TYPE)
-generate-docker-compose:
-	@bash docker-makefiles/update_docker_compose.sh
-	@if [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-  	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
-  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-  	else \
-  	  ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
-  	fi
-test-conn:
-	@echo "REST Connection Info for testing (Example: 127.0.0.1:32149):"
-	@read CONN; \
-	echo $$CONN > conn.tmp
-
 build:
 	$(CONTAINER_CMD) pull docker.io/anylogco/$(IMAGE):$(DOCKER_IMAGE_VERSION)
 dry-run: generate-docker-compose
 	@echo "Dry Run $(EDGELAKE_TYPE)"
-
-up: generate-docker-compose
-	@echo "Deploy EdgeLake $(EDGELAKE_TYPE)"
-	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml up -d
-	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml 
-down: generate-docker-compose
-	@echo "Stop EdgeLake $(EDGELAKE_TYPE)"
-	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down
-	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml 
-clean-vols: generate-docker-compose
-	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down --volumes
-	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml 
-clean: generate-docker-compose
-	EDGELAKE_TYPE=$(EDGELAKE_TYPE) envsubst < $(DOCKER_COMPOSE_TEMPLATE) > docker-makefiles/docker-compose.yaml
-	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down --volumes --rmi all
-	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml 
-attach:
-	@$(CONTAINER_CMD) attach --detach-keys=ctrl-d $(NODE_NAME)
-
 check:
 	@echo "====================="
 	@echo "ENVIRONMENT VARIABLES"
@@ -135,8 +93,65 @@ check:
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
 
-publish: publish-service publish-service-policy publish-deployment-policy
+# docker deploymnet
+generate-docker-compose:
+	@bash docker-makefiles/update_docker_compose.sh
+	@if [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+  	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+	elif [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+	elif [ "$(REMOTE_CLI)" == "false" ] && [ "$(ENABLE_NEBULA)" == "false" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
+  		NODE_NAME="$(NODE_NAME)" ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} ANYLOG_BROKER_PORT=${ANYLOG_BROKER_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+  	else \
+  	  ANYLOG_SERVER_PORT=${ANYLOG_SERVER_PORT} ANYLOG_REST_PORT=${ANYLOG_REST_PORT} envsubst < docker-makefiles/docker-compose-template.yaml > docker-makefiles/docker-compose.yaml; \
+  	fi
+up: generate-docker-compose
+	@echo "Deploy EdgeLake $(EDGELAKE_TYPE)"
+	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml up -d
+	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml
+down: generate-docker-compose
+	@echo "Stop EdgeLake $(EDGELAKE_TYPE)"
+	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down
+	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml
+clean-vols: generate-docker-compose
+	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down --volumes
+	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml
+clean: generate-docker-compose
+	EDGELAKE_TYPE=$(EDGELAKE_TYPE) envsubst < $(DOCKER_COMPOSE_TEMPLATE) > docker-makefiles/docker-compose.yaml
+	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down --volumes --rmi all
+	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml
+attach:
+	@$(CONTAINER_CMD) attach --detach-keys=ctrl-d $(NODE_NAME)
+exec:
+	@$(CONTAINER_CMD) exec -it $(NODE_NAME) /bin/bash
+logs:
+	@$(CONTAINER_CMD) logs $(NODE_NAME)
+
+# Open Horizon
+hzn-start: publish-service publish-service-policy publish-deployment-policy
 hzn-clean: hzn-clean remove-deployment-policy remove-service-policy remove-service
+publish-service:
+	@echo "=================="
+	@echo "PUBLISHING SERVICE"
+	@echo "=================="
+	@echo ${HZN_EXCHANGE_USER_AUTH}
+	@echo hzn exchange service publish --org=${HZN_ORG_ID} -u ${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
+	@hzn exchange service publish --org=${HZN_ORG_ID} --user-pw=${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
+	@echo ""
+remove-service:
+	@echo "=================="
+	@echo "REMOVING SERVICE"
+	@echo "=================="
+	@hzn exchange service remove -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
+	@echo ""
 publish-service:
 	@echo "=================="
 	@echo "PUBLISHING SERVICE"
@@ -164,21 +179,19 @@ remove-service-policy:
 	@echo "======================="
 	@hzn exchange service removepolicy -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
 	@echo ""
-
 publish-deployment-policy:
 	@echo "============================"
 	@echo "PUBLISHING DEPLOYMENT POLICY"
 	@echo "============================"
-	@hzn  exchange deployment addpolicy --org=$(HZN_ORI_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f service.deployment.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
-#	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        elif [ -n "$(BROKER_PORT)" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        else \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        fi
+	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
+            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
+            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+        elif [ -n "$(BROKER_PORT)" ]; then \
+            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+        else \
+            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
+        fi
 	@echo ""
 remove-deployment-policy:
 	@echo "=========================="
@@ -186,7 +199,24 @@ remove-deployment-policy:
 	@echo "=========================="
 	@hzn exchange deployment removepolicy -f $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
 	@echo ""
+agent-run:
+	@echo "================"
+	@echo "REGISTERING NODE"
+	@echo "================"
+	@hzn register --name=hzn-client --policy=node.policy.json
+	@watch hzn agreement list
+hzn-clean:
+	@echo "==================="
+	@echo "UN-REGISTERING NODE"
+	@echo "==================="
+	@hzn unregister -f
+	@echo ""
+hzn-logs: # logs for Docker container when running in OpenHorizon
+	@CONTANER_ID := $(shell ${CONTAINER_CMD} ps -a | grep $(NODE_NAME) | awk -F " " '{print $1}')
+	@$(CONTAINER_CMD) logs $(CONTANER_ID)
 
+
+# Testing
 test-node: test-conn
 	@CONN=$$(cat conn.tmp); \
 	echo "Node State against $$CONN"; \
@@ -199,10 +229,6 @@ test-network: test-conn
 	echo "Test Network Against: $$CONN"; \
 	curl -X GET http://$$CONN -H "command: test network" -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	rm -rf conn.tmp
-exec:
-	@$(CONTAINER_CMD) exec -it $(NODE_NAME) /bin/bash
-logs:
-	@$(CONTAINER_CMD) logs $(NODE_NAME)
 help:
 	@echo "Usage: make [target] [edgelake-type]"
 	@echo "Targets:"
