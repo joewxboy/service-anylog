@@ -8,14 +8,14 @@ else
 endif
 
 ARCH := $(shell uname -m)
-export TAG := 1.3.2501
+export DOCKER_IMAGE_VERSION := 1.3.2501
 # Check if the architecture matches aarch64 or arm64
 ifeq ($(ARCH),aarch64)
-    TAG := 1.3.2501-arm64
+    DOCKER_IMAGE_VERSION := 1.3.2501-arm64
 else ifeq ($(ARCH),arm64)
-    TAG := 1.3.2501-arm64
+    DOCKER_IMAGE_VERSION := 1.3.2501-arm64
 else
-    TAG := 1.3.2501
+    DOCKER_IMAGE_VERSION := 1.3.2501
 endif
 
 export CONTAINER_CMD := $(shell if command -v podman >/dev/null 2>&1; then echo "podman"; \
@@ -50,7 +50,7 @@ export BLOCKCHAIN_VOLUME := $(NODE_NAME)-blockchain
 export DATA_VOLUME := $(NODE_NAME)-data
 export LOCAL_SCRIPTS_VOLUME := $(NODE_NAME)-local-scripts
 
-$(shell python3 create_policy.py ${TAG} docker-makefiles/edgelake_${EDGELAKE_TYPE}.env)
+$(shell python3 create_policy.py ${DOCKER_IMAGE_VERSION} docker-makefiles/edgelake_${EDGELAKE_TYPE}.env)
 # Detect OS type
 export OS := $(shell uname -s)
 # Choose Docker Compose template based on OS
@@ -88,7 +88,7 @@ test-conn:
 	echo $$CONN > conn.tmp
 
 build:
-	$(CONTAINER_CMD) pull docker.io/anylogco/$(IMAGE):$(TAG)
+	$(CONTAINER_CMD) pull docker.io/anylogco/$(IMAGE):$(DOCKER_IMAGE_VERSION)
 dry-run: generate-docker-compose
 	@echo "Dry Run $(EDGELAKE_TYPE)"
 
@@ -117,7 +117,7 @@ check:
 	@echo "EDGELAKE_TYPE          default: generic                               actual: $(EDGELAKE_TYPE)"
 	@echo "DOCKER_IMAGE_BASE      default: anylogco/edgelake                     actual: $(IMAGE)"
 	@echo "DOCKER_IMAGE_NAME      default: edgelake                              actual: $(IMAGE_NAME)"
-	@echo "DOCKER_IMAGE_VERSION   default: latest                                actual: $(TAG)"
+	@echo "DOCKER_IMAGE_VERSION   default: latest                                actual: $(DOCKER_IMAGE_VERSION)"
 	@echo "DOCKER_HUB_ID          default: anylogco                              actual: $(IMAGE_ORG)"
 	@echo "HZN_ORG_ID             default: myorg                                 actual: ${HZN_ORG_ID}"
 	@echo "HZN_LISTEN_IP          default: 127.0.0.1                             actual: ${HZN_LISTEN_IP}"
