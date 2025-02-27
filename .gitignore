@@ -2,3 +2,5 @@
 .idea/
 docker_makefile/
 service.deployment.json
+docker-makefiles/docker-compose-template.yaml
+docker-makefiles/docker-compose.yaml
