@@ -54,15 +54,19 @@ def read_file(file_path):
                 key, value = line.split("=")
                 key = key.strip()
                 value = value.strip()
-                # if " " in value and '"' not in value:
-                #     value += f'"{value}"'
+                val_type = 'string'
                 try:
-                    val_type = "int" if isinstance(ast.literal_eval(value), int) else "string"
+                    value = ast.literal_eval(value)
                 except:
-                    val_type = "string"
+                    pass
                 finally:
                     if value in ['true', 'false']:
                         val_type = 'bool'
+                        value = bool(value)
+                    elif isinstance(value, int):
+                        val_type = 'int'
+
+
 
             if key and value and description and val_type and value != '""':
                 user_input.append({
