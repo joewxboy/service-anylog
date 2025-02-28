@@ -50,7 +50,7 @@ export BLOCKCHAIN_VOLUME := $(NODE_NAME)-blockchain
 export DATA_VOLUME := $(NODE_NAME)-data
 export LOCAL_SCRIPTS_VOLUME := $(NODE_NAME)-local-scripts
 
-$(shell python3 create_policy.py ${DOCKER_IMAGE_VERSION} docker-makefiles/edgelake_${EDGELAKE_TYPE}.env)
+$(shell python3 create_policy.py 1.3.1 docker-makefiles/edgelake_${EDGELAKE_TYPE}.env)
 # Detect OS type
 export OS := $(shell uname -s)
 # Choose Docker Compose template based on OS
