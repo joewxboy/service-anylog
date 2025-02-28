@@ -7,7 +7,7 @@ else
 	export EDGELAKE_TYPE := generic
 endif
 
-ARCH := $(shell uname -m)
+export ARCH ?= $(shell hzn architecture)
 export DOCKER_IMAGE_VERSION := 1.3.2501
 # Check if the architecture matches aarch64 or arm64
 ifeq ($(ARCH),aarch64)
@@ -17,7 +17,6 @@ else ifeq ($(ARCH),arm64)
 else
     DOCKER_IMAGE_VERSION := 1.3.2501
 endif
-@echo $(ARCH)
 
 export CONTAINER_CMD := $(shell if command -v podman >/dev/null 2>&1; then echo "podman"; \
 	else echo "docker"; fi)
@@ -61,8 +60,11 @@ else
 	export DOCKER_COMPOSE_TEMPLATE := docker-makefiles/docker-compose-template-ports-base.yaml
 endif
 
+CONTAINER_ID = $(shell $(CONTAINER_CMD) ps -a | grep $(IMAGE) | grep $(NODE_TYPE) | awk '{print $$1}')
+
 # prepare
 all: help
+	@echo $(ARCH)
 help: help-docker help-open-horizon
 login:
 	$(CONTAINER_CMD) login docker.io -u anyloguser --password $(EDGELAKE_TYPE)
@@ -131,11 +133,11 @@ clean: generate-docker-compose
 	@${DOCKER_COMPOSE_CMD} -f docker-makefiles/docker-compose.yaml down --volumes --rmi all
 	@rm -rf docker-makefiles/docker-compose.yaml docker-makefiles/docker-compose-template.yaml
 attach:
-	@$(CONTAINER_CMD) attach --detach-keys=ctrl-d $(NODE_NAME)
+	@$(CONTAINER_CMD) attach --detach-keys=ctrl-d $(CONTAINER_ID)
 exec:
-	@$(CONTAINER_CMD) exec -it $(NODE_NAME) /bin/bash
+	@$(CONTAINER_CMD) exec -it $(CONTAINER_ID) /bin/bash
 logs:
-	@$(CONTAINER_CMD) logs $(NODE_NAME)
+	@$(CONTAINER_CMD) logs $(CONTAINER_ID)
 
 # Open Horizon
 publish: publish-service publish-service-policy publish-deployment-policy
@@ -200,8 +202,7 @@ hzn-clean:
 	@echo ""
 
 hzn-logs: # logs for Docker container when running in OpenHorizon
-	@CONTANER_ID := $(shell ${CONTAINER_CMD} ps -a | grep $(NODE_NAME) | awk -F " " '{print $1}')
-	@$(CONTAINER_CMD) logs $(CONTANER_ID)
+	@$(CONTAINER_CMD) logs $(CONTAINER_ID)
 
 # Testing
 test-node: test-conn
