@@ -91,7 +91,7 @@ make up EDGELAKE_TYPE=master
 
 make up EDGELAKE_TYPE=query
 ```
-**Note**: EdgeLake version can be updated via DOCKER_IMAGE_VERSION in [Makefile](Makefile)
+**Note**: EdgeLake version can be updated via DOCKER_IMAGE_VERSION in [Makefile](archive/Makefile)
 
 ### Operator
 
@@ -112,7 +112,7 @@ hzn unregister -f
 3. Using `publish` command deploy EdgeLake
    * publish-service -- uses [service.definition.json](service.definition.json), which has the default / required values for a deployment of a node 
    * publish-service-policy -- uses [service.policy.json](service.policy.json), which declares the constraints for deploying a node
-   * publish-deployment-policy -- Due to the "extra" configurations to deploy an Operator node, the script uses either [generic.json](deployment-policies%2Fgeneric.json) or [operator.json](deployment-policies%2Foperator.json) in [deployment-policies](deployment-policies) 
+   * publish-deployment-policy -- Due to the "extra" configurations to deploy an Operator node, the script uses either [generic.json](deployment-policies%2Fgeneric.json) or [operator.json](deployment-policies%2Foperator.json) in [deployment-policies](archive/deployment-policies) 
    * agent-run -- uses [node.policy.json](node.policy.json), which matches the constraints between the configurations to decide servicees to deploy. 
 ```shell
 make publish EDGELAKE_TYPE=operator
