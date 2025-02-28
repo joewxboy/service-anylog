@@ -140,9 +140,9 @@ logs:
 publish: publish-service publish-service-policy publish-deployment-policy
 publish-version: publish-service publish-service-policy
 deploy: publish-deployment-policy
-run: agent-run
 hzn-clean: hzn-clean remove-deployment-policy remove-service-policy remove-service
 
+# Pull, not push, Docker image since provided by third party
 publish-service:
 	@echo "=================="
 	@echo "PUBLISHING SERVICE"
@@ -157,6 +157,7 @@ remove-service:
 	@echo "=================="
 	@hzn exchange service remove -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
 	@echo ""
+
 publish-service-policy:
 	@echo "========================="
 	@echo "PUBLISHING SERVICE POLICY"
@@ -169,20 +170,12 @@ remove-service-policy:
 	@echo "======================="
 	@hzn exchange service removepolicy -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
 	@echo ""
+
 publish-deployment-policy:
 	@echo "============================"
 	@echo "PUBLISHING DEPLOYMENT POLICY"
 	@echo "============================"
 	@hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f service.deployment.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
-#	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        elif [ -n "$(BROKER_PORT)" ]; then \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        else \
-#            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        fi
 	@echo ""
 remove-deployment-policy:
 	@echo "=========================="
@@ -190,22 +183,24 @@ remove-deployment-policy:
 	@echo "=========================="
 	@hzn exchange deployment removepolicy -f $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
 	@echo ""
+
 agent-run:
 	@echo "================"
 	@echo "REGISTERING NODE"
 	@echo "================"
 	@hzn register --name=hzn-client --policy=node.policy.json
 	@watch hzn agreement list
+
 hzn-clean:
 	@echo "==================="
 	@echo "UN-REGISTERING NODE"
 	@echo "==================="
 	@hzn unregister -f
 	@echo ""
+
 hzn-logs: # logs for Docker container when running in OpenHorizon
 	@CONTANER_ID := $(shell ${CONTAINER_CMD} ps -a | grep $(NODE_NAME) | awk -F " " '{print $1}')
 	@$(CONTAINER_CMD) logs $(CONTANER_ID)
-
 
 # Testing
 test-node: test-conn
