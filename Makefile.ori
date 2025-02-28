@@ -62,6 +62,7 @@ endif
 
 # prepare
 all: help
+help: help-docker help-open-horizon
 login:
 	$(CONTAINER_CMD) login docker.io -u anyloguser --password $(EDGELAKE_TYPE)
 build:
@@ -93,7 +94,7 @@ check:
 	@echo "LEDGER_CONN            default: 127.0.0.1:32049                       actual: ${LEDGER_CONN}"
 	@echo ""
 
-# docker deploymnet
+# docker deployment
 generate-docker-compose:
 	@bash docker-makefiles/update_docker_compose.sh
 	@if [ "$(REMOTE_CLI)" == "true" ] && [ "$(ENABLE_NEBULA)" == "true" ] && [ ! -z "$(ANYLOG_BROKER_PORT)" ]; then \
@@ -156,21 +157,6 @@ remove-service:
 	@echo "=================="
 	@hzn exchange service remove -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
 	@echo ""
-publish-service:
-	@echo "=================="
-	@echo "PUBLISHING SERVICE"
-	@echo "=================="
-	@echo ${HZN_EXCHANGE_USER_AUTH}
-	@echo hzn exchange service publish --org=${HZN_ORG_ID} -u ${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
-	@hzn exchange service publish --org=${HZN_ORG_ID} --user-pw=${HZN_EXCHANGE_USER_AUTH} -O -P --json-file=service.definition.json
-	@echo ""
-remove-service:
-	@echo "=================="
-	@echo "REMOVING SERVICE"
-	@echo "=================="
-	@hzn exchange service remove -f $(HZN_ORG_ID)/$(SERVICE_NAME)_$(SERVICE_VERSION)_$(ARCH)
-	@echo ""
-
 publish-service-policy:
 	@echo "========================="
 	@echo "PUBLISHING SERVICE POLICY"
@@ -187,16 +173,16 @@ publish-deployment-policy:
 	@echo "============================"
 	@echo "PUBLISHING DEPLOYMENT POLICY"
 	@echo "============================"
-	@hzn  exchange deployment addpolicy --org=$(HZN_ORI_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f service.deployment.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
+	hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f service.deployment.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION)
 #	@if [ "$(EDGELAKE_TYPE)" = "operator" ] && [ -n "$(BROKER_PORT)" ]; then \
 #            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
 #        elif [ "$(EDGELAKE_TYPE)" = "operator" ]; then \
 #            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/operator.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#        elif [ -ncp  "$(BROKER_PORT)" ]; then \
+#        elif [ -n "$(BROKER_PORT)" ]; then \
 #            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic_broker.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
 #        else \
 #            hzn exchange deployment addpolicy --org=$(HZN_ORG_ID) --user-pw=$(HZN_EXCHANGE_USER_AUTH) -f deployment-policies/generic.json $(HZN_ORG_ID)/policy-$(SERVICE_NAME)_$(SERVICE_VERSION) ; \
-#	fi
+#        fi
 	@echo ""
 remove-deployment-policy:
 	@echo "=========================="
@@ -234,20 +220,33 @@ test-network: test-conn
 	echo "Test Network Against: $$CONN"; \
 	curl -X GET http://$$CONN -H "command: test network" -H "User-Agent: AnyLog/1.23" -w "\n"; \
 	rm -rf conn.tmp
-help:
-	@echo "Usage: make [target] [edgelake-type]"
-	@echo "Targets:"
-	@echo "  login       	Log into AnyLog's Dockerhub - use EDGELAKE_TYPE to set password value"
-	@echo "  build       	Pull the docker image"
-	@echo "  up	  	Start the containers"
-	@echo "  attach      	Attach to AnyLog instance"
-	@echo "  test-node	Validate node status"
-	@echo "  test-network	Validate node can communicate with other nodes in the network"
-	@echo "  exec		Attach to shell interface for container"
-	@echo "  down		Stop and remove the containers"
-	@echo "  logs		View logs of the containers"
-	@echo "  clean-vols 	stop & clean volumes"
-	@echo "  clean       	stop & clean up volumes and image"
-	@echo "  help		show this help message"
-	@echo "supported AnyLog types: generic, master, operator, and query"
-	@echo "Sample calls: make up master | make attach master | make clean master"
+
+# Help
+help-docker:
+	@echo "====================="
+	@echo "Docker Deployment Options"
+	@echo "====================="
+	@echo "build            pull latest image for $(DOCKER_IMAGE_BASE):$(DOCKER_IMAGE_VERSION)"
+	@echo "up               bring up docker container based on EDGELAKE_TYPE"
+	@echo "attach           attach to docker container based on EDGELAKE_TYPE"
+	@echo "logs             view docker container logs based on EDGELAKE_TYPE"
+	@echo "down             stop docker container based on EDGELAKE_TYPE"
+	@echo "clean            (stop and) remove volumes and images for a docker container basd on EDGELAKE_TYPE"
+	@echo "tset-node        using cURL make sure EdgeLake is accessible and is configured properly"
+	@echo "test-network     using cURL make sure EdgeLake node is able to communicate with nodes in the network"
+help-open-horizon:
+	@echo "=============================="
+	@echo "OpenHorizon Deployment Options"
+	@echo "=============================="
+	@echo "publish                    publish service and deployment policy to OpenHorizon"
+	@echo "publish-version            publish new version of service to OpenHorizon"
+	@echo "deploy                     publish deployment policy of new version of service to OpenHorizon"
+	@echo "publish-service            publish service to OpenHorizon"
+	@echo "remove-service             remove service from OpenHorizon"
+	@echo "publish-service-policy     publish service policy to OpenHorizon"
+	@echo "remove-service-policy      remove service policy from OpenHorizon"
+	@echo "publish-deployment-policy  publish deployment policy to OpenHorizon"
+	@echo "remove-deployment-policy   remove deployment policy from OpenHorizon"
+	@echo "deploy-check               check OpenHorizon deployment"
+	@echo "agent-run                  start OpenHorizon service"
+	@echo "hzn-clean                  stop OpenHorizon service"
