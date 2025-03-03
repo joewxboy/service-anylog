@@ -6,12 +6,10 @@ These nodes can be deployed either on the same physical machine (for testing), o
 ![Demo Diagram](imgs/deployment_diagram.png)
 
 
-## Deploy EdgeLake
+## Deploying EdgeLake 
 
-In the following directions, the _Master_ and _Query_ nodes will be deployed directly via Docker, while the _Operator_ 
-node will be deployed via OpenHorizon.  
-
-Prior to deployment, docker should be [installed via OpenHorizon](Documentation/OpenHorizon_install.md), but may require 
+Whether the deployment process is done directly via Docker or Open Horizon, the process is essentially identical.
+0. Prior to deployment, docker should be [installed via OpenHorizon](Documentation/OpenHorizon_install.md), but may require 
 `sudo` permissions to execute docker commands. In addition, `make` command is not installed by default. 
 ```shell
 USER=`whoami` 
@@ -21,52 +19,186 @@ newgrp docker
 
 sudo apt-get -y install make
 ```
-
-### Master / Query
-
-1. Update the dotenv configuration file for the desired node - [Master](docker-makefiles/edgelake_master.env) | [Query](docker-makefiles/edgelake_query.env)
-Make sure the following params get update accordingly:
-   * Node Name
+1. Update the corresponding dotenv file - _[Master](docker-makefiles/edgelake_master.env)_, _[Operator](docker-makefiles/edgelake_operator.env)_ or _[Query](docker-makefiles/edgelake_query.env)_. Make sure the following params get update accordingly:
+  * Node Name
    * Company Name
    * LEDGER_CONN associated with Master node - when TCP binding is set to _true_, then 127.0.0.1 as the IP value for LEDGER will not work. 
+```dotenv
+# Sample dotenv file
+#--- General ---
+# Information regarding which AnyLog node configurations to enable. By default, even if everything is disabled, AnyLog starts TCP and REST connection protocols
+NODE_TYPE=operator
+# Name of the AnyLog instance
+NODE_NAME=edgelake-operator1
+# Owner of the AnyLog instance
+COMPANY_NAME=New Company
 
-2. Deploy  Node
-```shell
-make up EDGELAKE_TYPE=master
+#--- Networking ---
+# Port address used by AnyLog's TCP protocol to communicate with other nodes in the network
+ANYLOG_SERVER_PORT=32148
+# Port address used by AnyLog's REST protocol
+ANYLOG_REST_PORT=32149
+# Port value to be used as an MQTT broker, or some other third-party broker
+ANYLOG_BROKER_PORT=""
+# A bool value that determines if to bind to a specific IP and Port (a false value binds to all IPs)
+TCP_BIND=false
+# A bool value that determines if to bind to a specific IP and Port (a false value binds to all IPs)
+REST_BIND=false
+# A bool value that determines if to bind to a specific IP and Port (a false value binds to all IPs)
+BROKER_BIND=false
 
-make up EDGELAKE_TYPE=query
+#--- Database ---
+# Physical database type (sqlite or psql)
+DB_TYPE=sqlite
+# Username for SQL database connection
+DB_USER=""
+# Password correlated to database user
+DB_PASSWD=""
+# Database IP address
+DB_IP=127.0.0.1
+# Database port number
+DB_PORT=5432
+# Whether to set autocommit data
+AUTOCOMMIT=false
+# Whether to enable NoSQL logical database
+ENABLE_NOSQL=false
+# Whether to start to start system_query logical database
+SYSTEM_QUERY=false
+# Run system_query using in-memory SQLite. If set to false, will use pre-set database type
+MEMORY=false
+
+# Whether to enable NoSQL logical database
+ENABLE_NOSQL=false
+# Physical database type
+NOSQL_TYPE=mongo
+# Username for SQL database connection
+NOSQL_USER=""
+# Password correlated to database user
+NOSQL_PASSWD=""
+# Database IP address
+NOSQL_IP=127.0.0.1
+# Database port number
+NOSQL_PORT=27017
+# Store blobs in database
+BLOBS_DBMS=false
+# Whether (re)store a blob if already exists
+BLOBS_REUSE=true
+
+#--- Blockchain ---
+# How often to sync from blockchain
+BLOCKCHAIN_SYNC=30 second
+# Source of where the data is metadata stored/coming from. This can either be master for "local" install or specific
+# blockchain network to be used (ex. optimism)
+BLOCKCHAIN_SOURCE=master
+# TCP connection information for Master Node
+LEDGER_CONN=127.0.0.1:32048
+
+#--- Operator ---
+# Owner of the cluster
+CLUSTER_NAME=new-cluster
+# Logical database name
+DEFAULT_DBMS=new_company
+
+#--- MQTT ---
+# Whether to enable the default MQTT process
+ENABLE_MQTT=false
+
+# IP address of MQTT broker
+MQTT_BROKER=139.144.46.246
+# Port associated with MQTT broker
+MQTT_PORT=1883
+# User associated with MQTT broker
+MQTT_USER=anyloguser
+# Password associated with MQTT user
+MQTT_PASSWD=mqtt4AnyLog!
+# Whether to enable MQTT logging process
+MQTT_LOG=false
+
+# Topic to get data for
+MSG_TOPIC=edgelake-demo
+# Logical database name
+MSG_DBMS=new_company
+# Table where to store data
+MSG_TABLE=bring [table]
+# Timestamp column name
+MSG_TIMESTAMP_COLUMN=bring [timestamp]
+# Value column name
+MSG_VALUE_COLUMN=bring [value]
+# Column value type
+MSG_VALUE_COLUMN_TYPE=float
+
+#--- Monitoring ---
+# Whether to monitor the node or not
+MONITOR_NODES=true
+# Store monitoring in Operator node(s)
+STORE_MONITORING=false
+# For operator, accept syslog data from local (Message broker required)
+SYSLOG_MONITORING=false
+
+#--- Advanced Settings ---
+# Whether to automatically run a local (or personalized) script at the end of the process
+DEPLOY_LOCAL_SCRIPT=false
+# Run code in debug mode
+# 0 - without debug
+# 1 - show each step as it gets executed
+# 2 - interactive debug -- next will move to the next step | continue will jumps to the next section
+DEBUG_MODE=0
 ```
-**Note**: EdgeLake version can be updated via DOCKER_IMAGE_VERSION in [Makefile](archive/Makefile)
-
-### Operator
-
-1. Update the dotenv configuration file for the [Operator](docker-makefiles/edgelake_operator.env) node
-Make sure the following params get update accordingly:
-   * Node Name
-   * Company Name
-   * LEDGER_CONN - when TCP binding is set to _true_, then 127.0.0.1 as the IP value for LEDGER will not work.
-   * Cluster Name 
-   * Database name
+2. Using the `make` command deploy EdgeLake instance(s).
 
 
-2. Make sure there aren't any services running - note existing services will redeploy as part of `agent-run` in step
+### Steps Deployment
+Once the user has updated environment configurations, _[Makefile](Makefile)_ can deploy EdgeLake either via a standalone
+docker or through open horizon. In general the commands are nearly identical. 
+
+1. Start Node 
+* **Docker**:
 ```shell
-hzn unregister -f
+make up EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+```
+* **Open Horizon**:
+```shell
+# publish service and policies 
+make publish EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# for updates, publish service and policies 
+make publish-version EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# run OH agent instance(s)
+make deploy EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# run instance 
+make agent-run EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+```
+2. View Container (logs)
+```shell
+# attach to container - not supported with open horizon 
+make attach EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# view logs 
+make logs EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+make hzn-logs EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# Attach to executable CLI (bash) - not supported with open horizon
+make exec EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
 ```
 
-3. Using `publish` command deploy EdgeLake
-   * publish-service -- uses [service.definition.json](service.definition.json), which has the default / required values for a deployment of a node 
-   * publish-service-policy -- uses [service.policy.json](service.policy.json), which declares the constraints for deploying a node
-   * publish-deployment-policy -- Due to the "extra" configurations to deploy an Operator node, the script uses either [generic.json](deployment-policies%2Fgeneric.json) or [operator.json](deployment-policies%2Foperator.json) in [deployment-policies](archive/deployment-policies) 
-   * agent-run -- uses [node.policy.json](node.policy.json), which matches the constraints between the configurations to decide servicees to deploy. 
+3. Stop Node 
+* **Docker**
 ```shell
-make publish EDGELAKE_TYPE=operator
-```
+# stop docker container but keep data and image persistent
+make down EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
 
-When deploying a node via OpenHorizon, the following files are used: 
-* 
-* 
-* 
+# stop container and remove volume(s) 
+make clean-vols EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+
+# stop container and remove volume(s) and images 
+make clean EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+```
+* **Open Horizon**
+```shell
+make hzn-clean  EDGELAKE_TYPE=[NODE_TYPE - master, operator or query]
+```
 
 ### Validate Node
 
