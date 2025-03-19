@@ -26,7 +26,7 @@
 			"name": "DISABLE_CLI",
 			"label": "Disable CLI",
 			"type": "bool",
-			"defaultValue": "false"
+			"defaultValue": "true"
 		},
 
 		{
